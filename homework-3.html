@@ -1881,7 +1881,6 @@ e^z &amp;= \frac{p}{1-p}  \\
 ln(e^z) &amp;= ln(\frac{p}{1-p}) \\
 z(p) &amp;= ln(\frac{p}{1-p})
 
-
 \end{aligned}\]</span>
 </div>
 <div id="question-12" class="section level3">
@@ -1891,11 +1890,15 @@ z(p) &amp;= ln(\frac{p}{1-p})
 logistic(z)\)</span>. How do the odds of the outcome change if you
 increase <span class="math inline">\(x_{1}\)</span> by two? Demonstrate
 this.</p>
-<p><strong>Answer:</strong></p>
+<p><strong>Answer:</strong> An increase to <span class="math inline">\(x_{1}\)</span> by two would increase the odds by
+<span class="math inline">\(2e^{\beta_1}\)</span>.</p>
+<p><span class="math display">\[
+\frac{Pr(Y = 1 | X)}{1 - Pr(Y = 1 | X}) = e^{\beta_0 + 2\beta_1x_1}
+\]</span></p>
 <p>Assume now that <span class="math inline">\(\beta_1\)</span> is
 negative. What value does <span class="math inline">\(p\)</span>
 approach as <span class="math inline">\(x_{1}\)</span> approaches <span class="math inline">\(\infty\)</span>? What value does <span class="math inline">\(p\)</span> approach as <span class="math inline">\(x_{1}\)</span> approaches <span class="math inline">\(-\infty\)</span>?</p>
-<p><strong>Answer:</strong></p>
+<p><strong>Answer:</strong> When <span class="math inline">\(\beta_1\)</span> is negative and <span class="math inline">\(x_1\)</span> approaches <span class="math inline">\(\infty\)</span>, p approaches <span class="math inline">\(0\)</span>. When <span class="math inline">\(x_1\)</span> approaches <span class="math inline">\(\infty\)</span>, p approaches <span class="math inline">\(1\)</span>.</p>
 </div>
 </div>
 
