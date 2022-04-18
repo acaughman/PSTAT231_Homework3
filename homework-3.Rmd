@@ -14,6 +14,9 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE,
 
 library(tidyverse)
 library(tidymodels)
+library(discrim)
+library(MASS)
+library(klaR)
 library(naniar)
 library(visdat)
 library(corrplot)
@@ -104,7 +107,7 @@ Recall that there were missing values for `age`. To deal with this, add an imput
 -   Age and passenger fare.
 
 ```{r}
-titanic_recipe = recipe(survived ~ pclass, sex, age, sibsp, parch, fare, data = titanic_train) %>%  #create recipe
+titanic_recipe = recipe(survived ~ pclass + sex + age + sib_sp + parch + fare, data = titanic_train) %>%  #create recipe
   step_impute_linear(age) %>% #impute values for age
   step_dummy(all_nominal_predictors()) %>% #create dummy variables
   step_interact(terms = ~sex:fare) %>% 
@@ -135,7 +138,8 @@ glm_fit = fit(titanic_wflow1, titanic_train) #fit model to training data
 
 ```{r}
 lda_model = discrim_linear() %>% 
-  set_engine("MASS") #set linear discriminant analysis using MASS engine
+  set_engine("MASS") %>%  #set linear discriminant analysis using MASS engine
+  set_mode("classification")
 ```
 
 ```{r}
@@ -154,7 +158,8 @@ lda_fit = fit(titanic_wflow2, titanic_train) #fit model to training data
 
 ```{r}
 qda_model = discrim_quad() %>% 
-  set_engine("MASS") #set quadratic discriminant analysis using MASS engine
+  set_engine("MASS") %>%  #set quadratic discriminant analysis using MASS engine
+  set_mode("classification")
 ```
 
 ```{r}
@@ -173,7 +178,9 @@ qda_fit = fit(titanic_wflow3, titanic_train) #fit model to training data
 
 ```{r}
 nb_model = naive_Bayes() %>% 
-  set_engine("klaR", usekernel = FALSE) #set naive bayes model
+  set_engine("klaR") %>%  #set naive bayes model'
+  set_args(usekernel = FALSE) %>%  #set argument to false
+  set_mode("classification") 
 ```
 
 ```{r}
@@ -192,44 +199,85 @@ Now you've fit four different models to your training data.
 Use `predict()` and `bind_cols()` to generate predictions using each of these 4 models and your **training** data. Then use the *accuracy* metric to assess the performance of each of the four models.
 
 ```{r}
-
+glm_predict = predict(glm_fit, new_data = titanic_train) %>% 
+  bind_cols(titanic_train) #predict training data with glm
 ```
 
 ```{r}
-
+lda_predict = predict(lda_fit, new_data = titanic_train) %>% 
+  bind_cols(titanic_train) #predict training data with lda
 ```
 
 ```{r}
-
+qda_predict = predict(qda_fit, new_data = titanic_train) %>% 
+  bind_cols(titanic_train) #predict training data with qda
 ```
 
 ```{r}
-
+nb_predict = predict(nb_fit, new_data = titanic_train) %>% 
+  bind_cols(titanic_train) #predict training data with nb
 ```
 
 Which model achieved the highest accuracy on the training data?
 
-**Answer:**
+```{r}
+titanic_metrics <- metric_set(accuracy) #create metric set 
+```
+
+
+```{r}
+titanic_metrics(glm_predict, truth = survived, 
+                estimate = .pred_class) #glm accuracy
+
+titanic_metrics(lda_predict, truth = survived, 
+                estimate = .pred_class) #lda accuracy
+
+titanic_metrics(qda_predict, truth = survived, 
+                estimate = .pred_class) #qda accuracy
+
+titanic_metrics(nb_predict, truth = survived, 
+                estimate = .pred_class) #nb accuracy
+```
+
+
+**Answer:** The quadratic discriminant analysis model had the highest accuracy.
 
 ### Question 10
 
 Fit the model with the highest training accuracy to the **testing** data. Report the accuracy of the model on the **testing** data.
 
 ```{r}
+test_predict = predict(qda_fit, new_data = titanic_test, type = "prob") %>%
+  bind_cols(titanic_test) %>%  #get test data prediction
+  mutate(pred_class = as.factor(case_when(
+    .pred_Yes > .pred_No ~ "Yes",
+    .pred_Yes < .pred_No ~ "No" #get currect labels
+  )))
 
+test_predict$pred_class = factor(test_predict$pred_class, levels = c("Yes", "No")) #reorder factor survived
 ```
 
+```{r}
+accuracy(data = test_predict, truth = survived, estimate = pred_class) #test accuracy
+```
 
 Again using the **testing** data, create a confusion matrix and visualize it. Plot an ROC curve and calculate the area under it (AUC).
 
 ```{r}
-
+conf_mat(test_predict, survived, pred_class) #confusion matrix
 ```
 
+```{r}
+autoplot(roc_curve(data = test_predict, truth = survived, .pred_Yes))
+```
+
+```{r}
+roc_auc(test_predict, survived, .pred_Yes)
+```
 
 How did the model perform? Compare its training and testing accuracies. If the values differ, why do you think this is so?
 
-**Answer:**
+**Answer:** The model preformed relatively well, with accuracies over 80% on both the training and test set. Similar training and test values, as well as a high AUC indicate good model fit. 
 
 ### Required for 231 Students
 
